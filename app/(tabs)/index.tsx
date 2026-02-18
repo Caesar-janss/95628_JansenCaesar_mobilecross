@@ -1,64 +1,59 @@
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import React, { useState } from "react";
+import { View, TextInput, StyleSheet, ScrollView } from "react-native";
+import Counter from "../../components/counter";
+import Profile from "../../components/Profile";
 
 export default function App() {
+  const [count, setCount] = useState(0);
+  const [inputName, setInputName] = useState("");
+  const [finalName, setFinalName] = useState("Anonymous");
+  const [finalAge, setFinalAge] = useState(0);
+
+  const handleIncrement = () => {
+    setCount(count + 1);
+  };
+
+  const handleDecrement = () => {
+    setCount(count - 1);
+  };
+
+  const handlePassValue = () => {
+    setFinalName(inputName === "" ? "Anonymous" : inputName);
+    setFinalAge(count);
+  };
+
   return (
-    <ScrollView>
-      <View style={styles.container}>
-        <Image
-          source={require("../../assets/images/images.png")}
-          style={styles.logo}
-        />
-        <TextInput placeholder="Jansen Caesar - 00000095628" />
+    <ScrollView contentContainerStyle={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Masukkan Nama"
+        value={inputName}
+        onChangeText={setInputName}
+      />
 
-        <Image
-          source={require("../../assets/images/rafi.png")}
-          style={styles.logo}
-        />
-        <Text>Atanius Rafi Herkistio</Text>
-        <Text>00000044898</Text>
+      <Counter
+        value={count}
+        handleIncrement={handleIncrement}
+        handleDecrement={handleDecrement}
+        handlePassValue={handlePassValue}
+      />
 
-        <Image
-          source={require("../../assets/images/farion.png")}
-          style={styles.logo}
-        />
-        <Text>Farion Tekkry</Text>
-        <Text>00000056034</Text>
-
-        <Image
-          source={require("../../assets/images/john.png")}
-          style={styles.logo}
-        />
-        <Text>John Smith</Text>
-        <Text>johnsmith@example.com</Text>
-
-        <Image
-          source={require("../../assets/images/jane.png")}
-          style={styles.logo}
-        />
-        <Text>Jane Doe</Text>
-        <Text>jandoe@example.com</Text>
-      </View>
+      <Profile name={finalName} age={finalAge} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
+    padding: 20,
     alignItems: "center",
-    justifyContent: "center",
   },
-  logo: {
-    width: 150,
-    height: 150,
-    marginTop: 20,
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    width: "100%",
+    padding: 10,
+    marginBottom: 20,
+    borderRadius: 5,
   },
 });
