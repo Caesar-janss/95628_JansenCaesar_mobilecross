@@ -1,59 +1,41 @@
-import React, { useState } from "react";
-import { View, TextInput, StyleSheet, ScrollView } from "react-native";
-import Counter from "../../components/counter";
-import Profile from "../../components/Profile";
+import { Stack } from "expo-router";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { Card, Text, Avatar } from "react-native-paper";
+import userData from "../data.json";
 
 export default function App() {
-  const [count, setCount] = useState(0);
-  const [inputName, setInputName] = useState("");
-  const [finalName, setFinalName] = useState("Anonymous");
-  const [finalAge, setFinalAge] = useState(0);
-
-  const handleIncrement = () => {
-    setCount(count + 1);
-  };
-
-  const handleDecrement = () => {
-    setCount(count - 1);
-  };
-
-  const handlePassValue = () => {
-    setFinalName(inputName === "" ? "Anonymous" : inputName);
-    setFinalAge(count);
-  };
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Masukkan Nama"
-        value={inputName}
-        onChangeText={setInputName}
-      />
-
-      <Counter
-        value={count}
-        handleIncrement={handleIncrement}
-        handleDecrement={handleDecrement}
-        handlePassValue={handlePassValue}
-      />
-
-      <Profile name={finalName} age={finalAge} />
-    </ScrollView>
+    <View style={styles.screen}>
+      <Stack.Screen options={{ title: "User List - Paper Version" }} />
+      <ScrollView contentContainerStyle={styles.container}>
+        {userData.map((users, index) => (
+          <Card key={index} style={styles.card} mode="elevated">
+            <Card.Title
+              title={users.name}
+              subtitle={users.email}
+              left={(props) => (
+                <Avatar.Image {...props} source={{ uri: users.photo_url }} />
+              )}
+            />
+          </Card>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
   container: {
-    padding: 20,
+    padding: 16,
     alignItems: "center",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+  card: {
     width: "100%",
-    padding: 10,
-    marginBottom: 20,
-    borderRadius: 5,
+    maxWidth: 350,
+    marginBottom: 12,
   },
 });
