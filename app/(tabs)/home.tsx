@@ -1,16 +1,21 @@
 import { View, Text, Button, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
-export default function Index() {
+export default function Home() {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome</Text>
+      <Text style={styles.title}>Home Page</Text>
 
       <Button
-        title="Go to Home Page"
-        onPress={() => router.push("/home")}
+        title="Go to Email Page"
+        onPress={() => router.push("/email")}
+      />
+
+      <Button
+        title="Go to User List Page"
+        onPress={() => router.push("/userList")}
       />
     </View>
   );
@@ -23,7 +28,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     marginBottom: 20,
   },
 });
