@@ -1,17 +1,19 @@
-import { View, Text, Button, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { CustomTextInput, NIMInput } from "../../components/input";
 
 export default function Index() {
-  const router = useRouter();
+  const [name, setName] = useState("");
+  const [nim, setNim] = useState("");
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome</Text>
+      <Text style={styles.header}>Detail Mahasiswa:</Text>
+      <Text>Nama: {name}</Text>
+      <Text>NIM: {nim}</Text>
 
-      <Button
-        title="Go to Home Page"
-        onPress={() => router.push("/home")}
-      />
+      <CustomTextInput input={name} onChange={(val) => setName(val)} />
+      <NIMInput input={nim} onChange={(val) => setNim(val)} />
     </View>
   );
 }
@@ -19,11 +21,14 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: "#fff",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
+  header: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
   },
 });
