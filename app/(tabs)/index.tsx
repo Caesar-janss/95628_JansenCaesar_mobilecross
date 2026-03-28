@@ -1,34 +1,53 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { CustomTextInput, NIMInput } from "../../components/input";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Dimensions, Text, ScrollView } from "react-native";
+import Animated, { SlideInLeft, SlideInRight, SlideInDown } from "react-native-reanimated";
+import UserList from "./userList"; 
 
-export default function Index() {
-  const [name, setName] = useState("");
-  const [nim, setNim] = useState("");
+export default function App() {
+  const [screenData, setScreenData] = useState(Dimensions.get("window"));
+  const [orientation, setOrientation] = useState("portrait");
+
+  useEffect(() => {
+    const updateLayout = ({ window }: { window: any }) => {
+      setScreenData(window);
+      setOrientation(window.width < window.height ? "portrait" : "landscape");
+    };
+
+    const subscription = Dimensions.addEventListener("change", updateLayout);
+    return () => subscription?.remove();
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Detail Mahasiswa:</Text>
-      <Text>Nama: {name}</Text>
-      <Text>NIM: {nim}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Animated.View entering={SlideInLeft}>
+        <Text>Screen width: {screenData.width}</Text>
+      </Animated.View>
 
-      <CustomTextInput input={name} onChange={(val) => setName(val)} />
-      <NIMInput input={nim} onChange={(val) => setNim(val)} />
-    </View>
+      <Animated.View entering={SlideInRight}>
+        <Text>Screen height: {screenData.height}</Text>
+      </Animated.View>
+
+      <Animated.View entering={SlideInDown}>
+        <Text>Orientation: {orientation}</Text>
+      </Animated.View>
+
+      <View style={styles.separator} />
+
+      <UserList />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#fff",
+    paddingVertical: 50,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
   },
-  header: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
+  separator: {
+    height: 1,
+    width: "80%",
+    backgroundColor: "#ccc",
+    marginVertical: 20,
   },
 });
