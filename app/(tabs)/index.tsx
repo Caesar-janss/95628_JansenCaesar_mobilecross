@@ -1,53 +1,66 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, View, Dimensions, Text, ScrollView } from "react-native";
-import Animated, { SlideInLeft, SlideInRight, SlideInDown } from "react-native-reanimated";
-import UserList from "./userList"; 
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { getPosts } from "../../service/api";
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 
-export default function App() {
-  const [screenData, setScreenData] = useState(Dimensions.get("window"));
-  const [orientation, setOrientation] = useState("portrait");
+export default function Home() {
+  const router = useRouter();
+  const [posts, setPosts] = useState<any[]>([]);
 
   useEffect(() => {
-    const updateLayout = ({ window }: { window: any }) => {
-      setScreenData(window);
-      setOrientation(window.width < window.height ? "portrait" : "landscape");
-    };
-
-    const subscription = Dimensions.addEventListener("change", updateLayout);
-    return () => subscription?.remove();
+    fetchData();
   }, []);
 
+  const fetchData = async () => {
+    const data = await getPosts();
+    setPosts(data);
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Animated.View entering={SlideInLeft}>
-        <Text>Screen width: {screenData.width}</Text>
-      </Animated.View>
+    <ScrollView style={{ padding: 20 }}>
+      <Text style={{ fontSize: 22, fontWeight: "bold" }}>
+        All Posts
+      </Text>
 
-      <Animated.View entering={SlideInRight}>
-        <Text>Screen height: {screenData.height}</Text>
-      </Animated.View>
+      <TouchableOpacity
+        onPress={() => router.push("/addPost")}
+        style={{
+          marginTop: 10,
+          padding: 12,
+          backgroundColor: "blue",
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: "white", textAlign: "center" }}>
+          Add New Post
+        </Text>
+      </TouchableOpacity>
 
-      <Animated.View entering={SlideInDown}>
-        <Text>Orientation: {orientation}</Text>
-      </Animated.View>
-
-      <View style={styles.separator} />
-
-      <UserList />
+      {posts.map((post) => (
+        <TouchableOpacity
+          key={post.id}
+          style={{
+            borderWidth: 1,
+            borderColor: "#ccc",
+            marginTop: 10,
+            padding: 12,
+            borderRadius: 8,
+          }}
+          onPress={() =>
+            router.push({
+              pathname: "/postdetail",
+              params: { id: post.id },
+            })
+          }
+        >
+          <Text style={{ fontWeight: "bold" }}>{post.title}</Text>
+          <Text>{post.body}</Text>
+        </TouchableOpacity>
+      ))}
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingVertical: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  separator: {
-    height: 1,
-    width: "80%",
-    backgroundColor: "#ccc",
-    marginVertical: 20,
-  },
-});
