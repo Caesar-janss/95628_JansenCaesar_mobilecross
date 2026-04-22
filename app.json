@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "mobile-cross",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
@@ -14,15 +13,16 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
-      "edgeToEdgeEnabled": true,
+      
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.week01_JansenCaesar"
     },
     "web": {
       "output": "static"
     },
-    "plugins": [
+      "plugins": [
       "expo-router",
+
       [
         "expo-splash-screen",
         {
@@ -34,8 +34,26 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+        }
+      ],
+
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos to your library",
+          "isAccessMediaLocationEnabled": true
+        }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
