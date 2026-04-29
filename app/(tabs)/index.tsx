@@ -1,140 +1,88 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Button, Image, StyleSheet } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as MediaLibrary from 'expo-media-library';
-import * as FileSystem from 'expo-file-system';
+import * as Location from "expo-location"
+import React, { useState } from "react"
+import { Button, Dimensions, StyleSheet, Text, View } from "react-native"
+import MapView, { Marker, Region } from "react-native-maps"
 
-export default function Index() {
-  // Camera permission (API baru)
-  const [permission, requestPermission] = useCameraPermissions();
+type Coordinates = {
+  latitude: number,
+  longitude: number
+}
 
-  // Media permission
-  const [mediaPermission, setMediaPermission] = useState<boolean | null>(null);
+const { height } = Dimensions.get("window")
 
-  // Photo state
-  const [photo, setPhoto] = useState<any>(null);
+export default function App() {
+  const [location, setLocation] = useState<Coordinates | null>(null)
 
-  // Camera ref
-  const cameraRef = useRef<any>(null);
-
-  // Request media permission
-  useEffect(() => {
-    (async () => {
-      const media = await MediaLibrary.requestPermissionsAsync();
-      setMediaPermission(media.status === 'granted');
-    })();
-  }, []);
-
-  // Ambil Gambar
-  const takePicture = async () => {
-    try {
-      if (cameraRef.current) {
-        const result = await cameraRef.current.takePictureAsync();
-        setPhoto(result);
-      }
-    } catch (error) {
-      console.log(error);
+  const getLocation = async (): Promise<void> => {
+    const { status } = await Location.requestForegroundPermissionsAsync()
+    if (status !== "granted") {
+      alert("Permission denied! Please allow location access.")
+      return
     }
-  };
 
-  // Save Image
-  const saveImage = async () => {
-    try {
-      if (!photo) {
-        alert("No image to save!");
-        return;
-      }
-
-      if (!mediaPermission) {
-        alert("Media permission not granted!");
-        return;
-      }
-
-      const fileName = photo.uri.split('/').pop();
-      const newPath = (FileSystem as any).documentDirectory + fileName;
-
-      // Copy ke local storage
-      await FileSystem.copyAsync({
-        from: photo.uri,
-        to: newPath,
-      });
-
-      // Save ke gallery
-      await MediaLibrary.saveToLibraryAsync(newPath);
-
-      alert("Image saved to gallery!");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // Loading permission
-  if (!permission) {
-    return <Text>Requesting camera permission...</Text>;
+    const loc = await Location.getCurrentPositionAsync({})
+    setLocation({
+      latitude: loc.coords.latitude,
+      longitude: loc.coords.longitude
+    })
   }
 
-  // Belum diizinkan
-  if (!permission.granted) {
-    return (
-      <View style={styles.center}>
-        <Text>No access to camera</Text>
-        <Button title="Grant Permission" onPress={requestPermission} />
-      </View>
-    );
-  }
+  const region: Region | undefined = location
+    ? {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01
+      }
+    : undefined
 
   return (
     <View style={styles.container}>
-      {!photo ? (
-        <CameraView style={styles.camera} ref={cameraRef}>
-          <View style={styles.buttonContainer}>
-            <Button title="Take Photo" onPress={takePicture} />
-          </View>
-        </CameraView>
-      ) : (
-        <View style={styles.preview}>
-          <Image source={{ uri: photo.uri }} style={styles.image} />
-
-          <View style={styles.row}>
-            <Button title="Retake" onPress={() => setPhoto(null)} />
-            <Button title="SAVE IMAGE" onPress={saveImage} />
-          </View>
+      {!location ? (
+        <View style={styles.center}>
+            <Button title="Get Geo Location" onPress={getLocation} />
         </View>
+      ) : (
+        <>
+          <MapView
+            style={styles.map}
+            initialRegion={region}
+            onPress={(e) => setLocation(e.nativeEvent.coordinate)}
+          >
+            <Marker
+              coordinate={location}
+              title="My Location"
+              draggable
+              onDragEnd={(e) => setLocation(e.nativeEvent.coordinate)}
+            />
+          </MapView>
+          <View style={styles.info}>
+            <Text>Latitude: {location.latitude}</Text>
+            <Text>Longitude: {location.longitude}</Text>
+            <Button title="Refresh Location" onPress={getLocation} />
+          </View>
+        </>
       )}
     </View>
-  );
+  )
 }
 
-// STYLE
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  camera: {
-    flex: 1,
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '70%',
-  },
-  buttonContainer: {
-    position: 'absolute',
-    bottom: 40,
-    alignSelf: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    flex: 1
   },
   center: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center"
   },
-});
+  map: {
+    height: height * 0.5,
+    width: "100%"
+  },
+  info: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "white"
+  }
+})
