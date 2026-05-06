@@ -13,16 +13,14 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
-      
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.week01_JansenCaesar"
     },
     "web": {
       "output": "static"
     },
-      "plugins": [
+    "plugins": [
       "expo-router",
-
       [
         "expo-splash-screen",
         {
@@ -35,7 +33,6 @@
           }
         }
       ],
-
       [
         "expo-camera",
         {
@@ -43,7 +40,6 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
         }
       ],
-
       [
         "expo-media-library",
         {
@@ -51,9 +47,9 @@
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos to your library",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

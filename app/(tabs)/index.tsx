@@ -1,88 +1,96 @@
-import * as Location from "expo-location"
-import React, { useState } from "react"
-import { Button, Dimensions, StyleSheet, Text, View } from "react-native"
-import MapView, { Marker, Region } from "react-native-maps"
+import React, { useState, useRef } from 'react'
+import { View, Button, Alert, StyleSheet, Image } from 'react-native'
+import { CameraView, useCameraPermissions } from 'expo-camera'
+import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from 'expo-location'
+import { readAsStringAsync } from 'expo-file-system/legacy'
+import { decode } from 'base64-arraybuffer'
+import { supabase } from '../../lib/supabase'
 
-type Coordinates = {
-  latitude: number,
-  longitude: number
-}
+export default function Index() {
+  const [permission, requestPermission] = useCameraPermissions()
+  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const cameraRef = useRef<any>(null)
 
-const { height } = Dimensions.get("window")
-
-export default function App() {
-  const [location, setLocation] = useState<Coordinates | null>(null)
-
-  const getLocation = async (): Promise<void> => {
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== "granted") {
-      alert("Permission denied! Please allow location access.")
-      return
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync()
+      setPhotoUri(photo.uri)
     }
-
-    const loc = await Location.getCurrentPositionAsync({})
-    setLocation({
-      latitude: loc.coords.latitude,
-      longitude: loc.coords.longitude
-    })
   }
 
-  const region: Region | undefined = location
-    ? {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01
+  const uploadData = async () => {
+    if (!photoUri) return
+    try {
+      //  Ambil Geolokasi
+      let { status } = await requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Izin lokasi dibutuhkan')
+        return
       }
-    : undefined
+      const location = await getCurrentPositionAsync({})
+
+      //  Upload Foto ke Supabase Storage
+      const fileName = "photo-" + Date.now() + ".jpg"
+      const base64 = await readAsStringAsync(photoUri, { encoding: 'base64' })
+
+      const { data: uploadData, error: uploadError } = await supabase.storage.from('camera').upload(fileName, decode(base64), { contentType: 'image/jpeg' })
+
+      if (uploadError) throw uploadError
+
+      //  Ambil Public URL Foto
+      const { data: urlData } = supabase.storage.from('camera').getPublicUrl(fileName)
+      const publicUrl = urlData.publicUrl
+
+      //  Simpan Metadata ke Tabel photo
+      const { error: dbError } = await supabase.from('photo').insert([
+        {
+          latitude: location.coords.latitude.toString(),
+          longitude: location.coords.longitude.toString(),
+          image_url: publicUrl
+        }
+      ])
+
+      if (dbError) throw dbError
+
+      Alert.alert('Sukses', 'Foto dan lokasi berhasil disimpan ke Supabase')
+      setPhotoUri(null)
+    } catch (error: any) {
+      Alert.alert('Error', error.message)
+    }
+  }
+
+  if (!permission) return <View />
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Button title="Izinkan Kamera" onPress={requestPermission} />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
-      {!location ? (
-        <View style={styles.center}>
-            <Button title="Get Geo Location" onPress={getLocation} />
+      {photoUri ? (
+        <View style={styles.preview}>
+          <Image source={{ uri: photoUri }} style={styles.image} />
+          <Button title="Simpan ke Supabase" onPress={uploadData} />
+          <Button title="Ambil Ulang" onPress={() => setPhotoUri(null)} />
         </View>
       ) : (
-        <>
-          <MapView
-            style={styles.map}
-            initialRegion={region}
-            onPress={(e) => setLocation(e.nativeEvent.coordinate)}
-          >
-            <Marker
-              coordinate={location}
-              title="My Location"
-              draggable
-              onDragEnd={(e) => setLocation(e.nativeEvent.coordinate)}
-            />
-          </MapView>
-          <View style={styles.info}>
-            <Text>Latitude: {location.latitude}</Text>
-            <Text>Longitude: {location.longitude}</Text>
-            <Button title="Refresh Location" onPress={getLocation} />
+        <CameraView style={styles.camera} ref={cameraRef}>
+          <View style={styles.buttonContainer}>
+            <Button title="Ambil Foto" onPress={takePicture} />
           </View>
-        </>
+        </CameraView>
       )}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  map: {
-    height: height * 0.5,
-    width: "100%"
-  },
-  info: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "white"
-  }
+  container: { flex: 1, justifyContent: 'center' },
+  camera: { flex: 1, justifyContent: 'flex-end' },
+  buttonContainer: { padding: 20, backgroundColor: 'transparent' },
+  preview: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  image: { width: 300, height: 400, marginBottom: 20 }
 })
