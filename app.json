@@ -14,7 +14,7 @@
         "backgroundColor": "#E6F4FE"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.week01_JansenCaesar",
+      "package": "com.if670.week12notifications",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.CAMERA",
