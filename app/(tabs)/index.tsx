@@ -1,10 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, {
+  useState,
+  useRef,
+  useEffect
+} from 'react'
+
 import {
   View,
   Button,
   Alert,
   StyleSheet,
-  Image
+  Image,
+  Text
 } from 'react-native'
 
 import {
@@ -17,12 +23,26 @@ import {
   getCurrentPositionAsync
 } from 'expo-location'
 
-import { readAsStringAsync } from 'expo-file-system/legacy'
-import { decode } from 'base64-arraybuffer'
-import { supabase } from '../../services/supabase'
-import * as Notifications from 'expo-notifications'
-import * as Device from 'expo-device'
-import { Platform } from 'react-native'
+import { readAsStringAsync }
+from 'expo-file-system/legacy'
+import { decode }
+from 'base64-arraybuffer'
+import { supabase }
+from '../../services/supabase'
+import * as Notifications
+from 'expo-notifications'
+import * as Device
+from 'expo-device'
+import { Platform }
+from 'react-native'
+import {
+  incrementSuccess,
+  incrementFailed,
+} from '../../redux/slices/counter.slice'
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '../../redux/hooks'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -50,13 +70,13 @@ async function registerForPushNotificationsAsync() {
       return
     }
   }
-
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(
       'default',
       {
         name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
+        importance:
+          Notifications.AndroidImportance.MAX,
       }
     )
   }
@@ -76,6 +96,14 @@ async function sendNotification(
 }
 
 export default function Index() {
+  const dispatch = useAppDispatch()
+  const {
+    success,
+    failed
+  } = useAppSelector(
+    (state) => state.counter
+  )
+
   const [permission, requestPermission] =
     useCameraPermissions()
   const [photoUri, setPhotoUri] =
@@ -97,7 +125,7 @@ export default function Index() {
   const uploadData = async () => {
     if (!photoUri) return
     try {
-      // Ambil lokasi
+      // Lokasi
       let { status } =
         await requestForegroundPermissionsAsync()
       if (status !== 'granted') {
@@ -109,7 +137,8 @@ export default function Index() {
       }
       const location =
         await getCurrentPositionAsync({})
-      // Upload foto
+
+        // Upload foto
       const fileName =
         'photo-' + Date.now() + '.jpg'
       const base64 =
@@ -119,9 +148,7 @@ export default function Index() {
             encoding: 'base64'
           }
         )
-
       const {
-        data: uploadData,
         error: uploadError
       } = await supabase.storage
         .from('camera')
@@ -132,11 +159,18 @@ export default function Index() {
             contentType: 'image/jpeg'
           }
         )
+
       if (uploadError) {
+        dispatch(incrementFailed())
+        await sendNotification(
+          'Upload Gagal',
+          `Success: ${success}
+Failed: ${failed + 1}`
+        )
         throw uploadError
       }
 
-      // Ambil public URL
+      // Public URL
       const { data: urlData } =
         supabase.storage
           .from('camera')
@@ -160,30 +194,43 @@ export default function Index() {
           ])
 
       if (dbError) {
+        dispatch(incrementFailed())
         await sendNotification(
-          'Data Gagal Masuk',
-          `Latitude: ${location.coords.latitude}
-Longitude: ${location.coords.longitude}`
+          'Database Gagal',
+          `Success: ${success}
+Failed: ${failed + 1}
+Latitude:
+${location.coords.latitude}
+Longitude:
+${location.coords.longitude}`
         )
         throw dbError
       }
 
-      // Notification sukses
+      // SUCCESS
+      dispatch(incrementSuccess())
       await sendNotification(
         'Data Berhasil Masuk',
-        `Latitude: ${location.coords.latitude}
-Longitude: ${location.coords.longitude}`
+        `Success: ${success + 1}
+Failed: ${failed}
+Latitude:
+${location.coords.latitude}
+Longitude:
+${location.coords.longitude}`
       )
 
       Alert.alert(
         'Sukses',
-        'Foto dan lokasi berhasil disimpan ke Supabase'
+        'Foto dan lokasi berhasil disimpan'
       )
       setPhotoUri(null)
     } catch (error: any) {
+      dispatch(incrementFailed())
       await sendNotification(
         'Terjadi Error',
-        error.message
+        `Success: ${success}
+Failed: ${failed + 1}
+${error.message}`
       )
       Alert.alert(
         'Error',
@@ -198,7 +245,7 @@ Longitude: ${location.coords.longitude}`
     return (
       <View style={styles.container}>
         <Button
-          title="Izinkan Kamera"
+          title='Izinkan Kamera'
           onPress={requestPermission}
         />
       </View>
@@ -207,6 +254,13 @@ Longitude: ${location.coords.longitude}`
 
   return (
     <View style={styles.container}>
+      <Text style={styles.counter}>
+        Success: {success}
+      </Text>
+      <Text style={styles.counter}>
+        Failed: {failed}
+      </Text>
+
       {photoUri ? (
         <View style={styles.preview}>
           <Image
@@ -214,11 +268,11 @@ Longitude: ${location.coords.longitude}`
             style={styles.image}
           />
           <Button
-            title="Simpan ke Supabase"
+            title='Simpan ke Supabase'
             onPress={uploadData}
           />
           <Button
-            title="Ambil Ulang"
+            title='Ambil Ulang'
             onPress={() => setPhotoUri(null)}
           />
         </View>
@@ -229,7 +283,7 @@ Longitude: ${location.coords.longitude}`
         >
           <View style={styles.buttonContainer}>
             <Button
-              title="Ambil Foto"
+              title='Ambil Foto'
               onPress={takePicture}
             />
           </View>
@@ -261,5 +315,11 @@ const styles = StyleSheet.create({
     width: 300,
     height: 400,
     marginBottom: 20
+  },
+  counter: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 10,
+    fontWeight: 'bold'
   }
 })
